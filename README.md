@@ -1,3 +1,4 @@
+![Logo](assets/EventHorizon.svg)
 # EventHorizon
 "You can't escape the Event Horizon"
 
