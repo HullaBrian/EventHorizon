@@ -20,7 +20,7 @@ def service_connection(key, mask):
     data = key.data
     if mask & selectors.EVENT_READ:
         recv_data = sock.recv(1024)
-        print(recv_data)
+        print("Received data:", recv_data)
         if recv_data:
             data.outb += recv_data
         else:
@@ -46,6 +46,7 @@ def listener(HOST: str, PORT: int):
     try:
         while True:
             events = sel.select(timeout=None)
+            print(events)
             for key, mask in events:
                 if key.data is None:
                     accept_wrapper(key.fileobj)  # accept incoming connections
