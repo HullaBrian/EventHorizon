@@ -29,7 +29,7 @@ void monitor_file(const char *filename) {
     }
 }
 
-void clean_up(int signum) {
+void clean_up_main(int signum) {
     printf("\n[+] Cleaning up...");
     fflush(stdout);
 
@@ -46,7 +46,7 @@ void clean_up(int signum) {
 }
 
 int monitor(char* logging_location) {
-    if (signal(SIGINT, clean_up) == SIG_ERR) {
+    if (signal(SIGINT, clean_up_main) == SIG_ERR) {
         perror("Failed to set up SIGINT handler");
         return EXIT_FAILURE;
     }
