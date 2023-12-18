@@ -1,35 +1,55 @@
+import string
+import uuid
+import random
+import traceback
+
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from base64 import b64encode, b64decode
 from os import urandom
-import uuid
 
 
 def encrypt(message: str, key: bytes) -> tuple[str, str]:
     iv = rand_iv()
+    # iv = b'3jBjd4Puv32Fk0e/'
 
-    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    cipher = Cipher(algorithms.AES256(key), modes.CTR(iv), backend=default_backend())
 
     encryptor = cipher.encryptor()
     ciphertext = encryptor.update(message) + encryptor.finalize()
 
-    return b64encode(iv).decode('utf-8'), b64encode(ciphertext).decode('utf-8')
+    # return b64encode(iv).decode('utf-8'), b64encode(ciphertext).decode('utf-8')
+    return ciphertext
 
 
-def decrypt(iv: str, ciphertext: str, key: str) -> str:
-    iv = b64decode(iv)
-    ciphertext = b64decode(ciphertext)
-
-    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+def decrypt(iv: bytes, ciphertext: bytes, key: bytes) -> str:
+    cipher = Cipher(algorithms.AES(key), modes.CTR(iv), backend=default_backend())
 
     decryptor = cipher.decryptor()
-    decrypted_message = decryptor.update(ciphertext) + decryptor.finalize()
+    try:
+        decrypted_message = decryptor.update(ciphertext)  # + decryptor.finalize()
+    except ValueError as e:
+        traceback.print_exc()
+        exit()
+    except UnicodeDecodeError:
+        return "UNKNOWN!"
+    
+    return decrypted_message
 
-    return decrypted_message.decode('utf-8')
+
+def padding(buffer: str) -> str:
+    out = ""
+    remainder = len(buffer) % 16
+    if remainder == 0:
+        return buffer
+
+    for i in range(16 - remainder):
+        out += random.choice(string.ascii_letters)
+    return buffer + out
 
 
 def rand_key() -> str:
-    return urandom(32)  # 256-bit key for AES-256
+    return urandom(32)
 
 
 def rand_iv() -> str:
@@ -37,14 +57,19 @@ def rand_iv() -> str:
 
 
 def gen_uuid() -> str:
-    return str(uuid.uuid4())
+    # generates a 32 character long uuid
+    # 32 characters long to not have to add padding during agent hello message
+    return str(uuid.uuid4()).ljust(32)[:32].replace(" ", "-")
 
 
 if __name__ == "__main__":
-    key = rand_key()
-    message = "Hello, AES-256 encryption and decryption!"
+    key = b've3wwzT9auRC9vYk/1CqNARPFZuzTExx'
+    iv = b'3jBjd4Puv32Fk0e/'
+    message = "CAHZJJjEwXnaCqUNhjhwZWrWwLhiAhfM"
 
-    iv, ciphertext = encrypt(message.encode('utf-8'), key)
+    ciphertext = encrypt(message.encode('utf-8'), key)
+    print(f"Message: {message}")
+    print(f"Key: {key}")
     print(f"IV: {iv}")
     print(f"Ciphertext: {ciphertext}")
 

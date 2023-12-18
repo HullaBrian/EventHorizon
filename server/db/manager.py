@@ -6,13 +6,6 @@ from pathlib import Path
 
 agents_db: str = "agents.db"
 connection: sqlite3.Connection = None
-"""
-CREATE TABLE agents (
-    uuid TEXT NOT NULL,
-    key TEXT NOT NULL,
-    iv TEXT NOT NULL
-);
-"""
 
 
 def check_db():
@@ -62,7 +55,24 @@ def init_agents_db() -> sqlite3.Cursor:
 
 def add_agent(cursor: sqlite3.Cursor, uuid: str, key: str, iv: str) -> bool:
     query = f"INSERT INTO agents (uuid, key, iv) VALUES ('{uuid}', '{key}', '{iv}')"
-    print(query)
+    logging.debug(query)
     cursor.execute(query)
     connection.commit()
     return True
+
+
+def lookup_by_uuid(uuid: str) -> tuple[str, str]:
+    # Returns the encryption key and iv for a uuid
+    query = f"SELECT * FROM agents WHERE trim(UUID) LIKE '{uuid}';"
+    logging.debug(query)
+    match = sqlite3.connect(agents_db).execute(query).fetchall()
+
+    if len(match) == 0:
+        return ("", "")
+    if len(match) > 1:
+        logging.critical("Database contains multiple entries for this uuid! Is it corrupted?")
+        return ("ERROR", "ERROR")
+
+    return match[0][1:]
+    
+    

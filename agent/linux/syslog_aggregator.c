@@ -16,7 +16,7 @@ int collect_syslog() {
     // char buffer[1024]; int n = 0;
     struct sockaddr_in servaddr, cliaddr;
 
-    printf("[+] Creating syslog aggregation socket on port %d...", PORT);
+    printf("[+] Creating syslog aggregation socket on port %d...", PORT + 1);
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
 		perror("socket creation failed");
 		exit(EXIT_FAILURE);
@@ -27,7 +27,7 @@ int collect_syslog() {
 
     servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = INADDR_ANY;
-	servaddr.sin_port = htons(PORT);
+	servaddr.sin_port = htons(PORT + 1);
 
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 ) {
 		perror("bind failed");
