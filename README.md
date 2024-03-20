@@ -7,6 +7,10 @@ Right now, it simply aggregates syslog logs and prints them to the server's term
 
 
 # Server
+## Pre-Installation / Dependencies
+The server requires libssl-dev in order to compile agents.
+`apt install libssl-dev`
+
 ## Installation
 - Server installation documentation coming soon...
 ## Starting
