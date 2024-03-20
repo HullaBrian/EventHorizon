@@ -26,11 +26,11 @@ python3 -m server -h <server ip> -p <port>
 ```
 python3 -m server -g -h <server ip> -p <server port>
 ```
-- While you don't have to provide an ip or port, the agents attempts to connect to `127.0.0.1:61337`
-
-
+- By default, the agents attempt to connect to `127.0.0.1:61337` if parameters are not specified
 - Event Horizon will generate an agent and add a uuid, encryption key, and initialization vector to its internal `agents.db`
- database
+ database.
+## Installation
+- In the future, the agents will install themselves, however for the time being the Linux syslog configuration needs to send logs to `127.0.0.1:1338`
 - To run the agent, run:
 ```
 ./gravity
