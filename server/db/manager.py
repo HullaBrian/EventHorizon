@@ -30,7 +30,7 @@ def check_db():
         logging.info("Connected to database!")
 
     # More checks to come in the future...
-    logging.info("Finished database health checks!")
+    logging.info("Finished database health checks!\n")
     return cursor
 
 

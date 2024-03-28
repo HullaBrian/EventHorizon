@@ -8,8 +8,6 @@ from base64 import b64encode
 from server.crypto import decrypt
 from server.db.manager import lookup_by_uuid
 
-server: socketserver.ThreadingTCPServer = None
-
 
 class Listener(socketserver.BaseRequestHandler):
     def handle(self):
@@ -41,13 +39,15 @@ class Listener(socketserver.BaseRequestHandler):
             print(f"Received {o_len} bytes from {client_address}: {data}")
 
 
-def listener(host: str, port: int):
-    global server
+def listener(host: str, port: int, status: threading.Event):
+    server: socketserver.ThreadingTCPServer = None
+
     try:
         socketserver.TCPServer.allow_reuse_address = True
         with socketserver.ThreadingTCPServer((host, port), Listener) as server:
             logging.info(f"Server is listening on {host}:{port}")
+            status.set()
             server.serve_forever()
             server_thread.join()
     except KeyboardInterrupt:
-        logger.info("Exiting...")
+        logger.info("Exiting...\n")
